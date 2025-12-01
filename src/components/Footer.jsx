@@ -2,93 +2,94 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
+  const year = new Date().getFullYear();
+
+  const links = [
+    { path: '/', label: 'Accueil' },
+    { path: '/vote', label: 'Voter' },
+    { path: '/billetterie', label: 'Billetterie' },
+    { path: '/a-propos', label: 'À propos' },
+  ];
 
   return (
-    <footer className="bg-gradient-to-b from-accent to-black border-t border-gray-800">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          <div>
-            <img 
-              src="/images/logo-event.png" 
-              alt="Miss FSS-Médecine" 
-              className="h-16 w-auto mb-4"
-            />
-            <p className="text-gray-400 text-sm leading-relaxed">
-              Le concours de beauté et d'élégance de la Faculté des Sciences de Santé du Bénin
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold text-secondary mb-4">Navigation</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Accueil
-                </Link>
-              </li>
-              <li>
-                <Link to="/vote" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Voter
-                </Link>
-              </li>
-              <li>
-                <Link to="/billetterie" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Billetterie
-                </Link>
-              </li>
-              <li>
-                <Link to="/a-propos" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  À propos
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold text-secondary mb-4">Organisateur</h3>
-            <div className="flex items-center space-x-3 mb-4">
-              <img 
-                src="/images/logo-aemc.png" 
-                alt="AEMC" 
-                className="h-12 w-auto"
-              />
-              <div>
-                <p className="text-white font-medium">AEMC</p>
-                <p className="text-gray-400 text-xs">Association des Étudiants</p>
+    <footer className="bg-black border-t border-white/5">
+      <div className="container-pro">
+        {/* Main */}
+        <div className="py-16 lg:py-20">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12">
+            {/* Brand */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center gap-3">
+                <img 
+                  src="/images/logo-event.png" 
+                  alt="Miss FSS" 
+                  className="h-12 w-auto"
+                />
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Miss FSS-Médecine</h3>
+                  <p className="text-sm text-gray-400">2025</p>
+                </div>
               </div>
+              
+              <p className="text-gray-400 leading-relaxed max-w-md">
+                Le concours d'élégance et de beauté de la Faculté des Sciences de Santé du Bénin.
+              </p>
             </div>
-          </div>
 
-          <div>
-            <h3 className="text-lg font-semibold text-secondary mb-4">Développeur</h3>
-            <div className="flex items-center space-x-3">
-              <img 
-                src="/images/logo-guilok.png" 
-                alt="GUI-LOK Dev" 
-                className="h-12 w-auto"
-              />
-              <div>
-                <p className="text-white font-medium">GUI-LOK Dev</p>
-                <p className="text-gray-400 text-xs">Solutions digitales</p>
+            {/* Links */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-white uppercase tracking-wider">Navigation</h4>
+              <ul className="space-y-2">
+                {links.map(link => (
+                  <li key={link.path}>
+                    <Link
+                      to={link.path}
+                      className="text-gray-400 hover:text-[#FFD700] transition-colors text-sm"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Partners */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-white uppercase tracking-wider">Partenaires</h4>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 glass-pro rounded-lg flex items-center justify-center p-2">
+                    <img src="/images/logo-aemc.png" alt="AEMC" className="w-full h-full object-contain" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">AEMC</p>
+                    <p className="text-xs text-gray-500">Organisateur</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 glass-pro rounded-lg flex items-center justify-center p-2">
+                    <img src="/images/logo-guilok.png" alt="GUI-LOK" className="w-full h-full object-contain" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">GUI-LOK Dev</p>
+                    <p className="text-xs text-gray-500">Développeur</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-gray-400 text-sm">
-              © {currentYear} Miss FSS-Médecine. Tous droits réservés.
-            </p>
-            <div className="flex items-center space-x-6">
-              <p className="text-gray-400 text-sm">
-                Organisé par <span className="text-secondary font-medium">AEMC</span>
-              </p>
-              <span className="text-gray-600">|</span>
-              <p className="text-gray-400 text-sm">
-                Développé par <span className="text-secondary font-medium">GUI-LOK Dev</span>
-              </p>
+        {/* Bottom */}
+        <div className="border-t border-white/5 py-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+            <p>© {year} Miss FSS-Médecine. Tous droits réservés.</p>
+            <div className="flex items-center gap-4">
+              <span>Organisé par <span className="text-[#FFD700]">AEMC</span></span>
+              <span>·</span>
+              <span>Développé par <span className="text-[#FFD700]">GUI-LOK Dev</span></span>
             </div>
           </div>
         </div>

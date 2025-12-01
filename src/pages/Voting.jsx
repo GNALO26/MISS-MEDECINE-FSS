@@ -1,67 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import CandidateCard from '../components/CandidateCard';
 import { initKkiapay } from '../utils/kkiapay';
+import { getCandidates, subscribeToVotes } from '../utils/supabase';
 
 const Voting = () => {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showVotes, setShowVotes] = useState(true);
-
-  // À remplacer par vos vraies données
-  const initialCandidates = [
-    { id: 1, number: 1, name: 'Candidate 1', program: 'Médecine Générale', image: '/images/candidates/candidate-1.jpg', votes: 0 },
-    { id: 2, number: 2, name: 'Candidate 2', program: 'Chirurgie', image: '/images/candidates/candidate-2.jpg', votes: 0 },
-    { id: 3, number: 3, name: 'Candidate 3', program: 'Pédiatrie', image: '/images/candidates/candidate-3.jpg', votes: 0 },
-    { id: 4, number: 4, name: 'Candidate 4', program: 'Gynécologie', image: '/images/candidates/candidate-4.jpg', votes: 0 },
-    { id: 5, number: 5, name: 'Candidate 5', program: 'Cardiologie', image: '/images/candidates/candidate-5.jpg', votes: 0 },
-    { id: 6, number: 6, name: 'Candidate 6', program: 'Neurologie', image: '/images/candidates/candidate-6.jpg', votes: 0 },
-    { id: 7, number: 7, name: 'Candidate 7', program: 'Dermatologie', image: '/images/candidates/candidate-7.jpg', votes: 0 },
-    { id: 8, number: 8, name: 'Candidate 8', program: 'Ophtalmologie', image: '/images/candidates/candidate-8.jpg', votes: 0 },
-    { id: 9, number: 9, name: 'Candidate 9', program: 'Psychiatrie', image: '/images/candidates/candidate-9.jpg', votes: 0 },
-    { id: 10, number: 10, name: 'Candidate 10', program: 'Anesthésie', image: '/images/candidates/candidate-10.jpg', votes: 0 },
-  ];
 
   useEffect(() => {
     loadCandidates();
     checkVotesVisibility();
+    checkAdminStatus();
+    
+    const sub = subscribeToVotes(() => loadCandidates());
+    return () => sub?.unsubscribe();
   }, []);
 
   const loadCandidates = async () => {
     try {
-      const response = await fetch('/.netlify/functions/get-votes');
-      const data = await response.json();
-      setCandidates(data.candidates || initialCandidates);
+      const data = await getCandidates();
+      setCandidates(data);
     } catch (error) {
-      console.error('Erreur lors du chargement:', error);
-      setCandidates(initialCandidates);
+      console.error('Erreur:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const checkAdminStatus = () => {
+    setIsAdmin(!!localStorage.getItem('admin_token'));
+  };
+
   const checkVotesVisibility = () => {
-    const eventDate = new Date('2026-01-21T20:00:00');
+    const eventDate = new Date('2025-12-31T20:00:00');
     const fourteenDaysBefore = new Date(eventDate);
     fourteenDaysBefore.setDate(fourteenDaysBefore.getDate() - 14);
-    
-    const now = new Date();
-    const shouldShowVotes = now < fourteenDaysBefore;
-    
-    setShowVotes(shouldShowVotes);
+    setShowVotes(new Date() < fourteenDaysBefore);
   };
 
   const handleVote = (candidate) => {
-    setSelectedCandidate(candidate);
-    
     initKkiapay({
       amount: 100,
       position: 'center',
       callback: async (response) => {
         if (response.status === 'SUCCESS') {
           try {
-            await fetch('/.netlify/functions/vote', {
+            const result = await fetch('/.netlify/functions/vote', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -70,87 +56,104 @@ const Voting = () => {
               })
             });
             
-            loadCandidates();
-            alert(`Merci d'avoir voté pour ${candidate.name} !`);
+            const data = await result.json();
+            
+            if (data.success) {
+              alert(`✅ Vote enregistré pour ${candidate.name} !\nTotal : ${data.votes} votes`);
+              loadCandidates();
+            } else {
+              alert(`❌ ${data.error}`);
+            }
           } catch (error) {
-            console.error('Erreur lors de l\'enregistrement du vote:', error);
+            alert('❌ Erreur lors de l\'enregistrement');
           }
         }
       },
-      theme: '#8B0000'
+      theme: '#FFD700'
     });
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen pt-32 pb-20 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center pt-32">
         <div className="text-center">
-          <div className="loading-shimmer w-16 h-16 rounded-full mx-auto mb-4" />
-          <p className="text-gray-400">Chargement des candidates...</p>
+          <div className="w-12 h-12 border-3 border-[#FFD700]/30 border-t-[#FFD700] rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-400">Chargement...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pt-32 pb-20">
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
-        style={{ backgroundImage: 'url(/images/background-voting.jpg)' }}
-      />
-      
-      <div className="relative z-10 container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            <span className="gradient-text">Votez pour votre favorite</span>
-          </h1>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto mb-8">
-            Chaque vote compte 100 FCFA. Vous pouvez voter autant de fois que vous le souhaitez.
-          </p>
-          <div className="inline-flex items-center space-x-2 glass-effect px-6 py-3 rounded-full">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-white font-medium">Votes en cours</span>
+    <div className="min-h-screen pt-32 pb-20 bg-black">
+      <div className="container-pro">
+        {/* Header */}
+        <div className="text-center mb-16 max-w-3xl mx-auto fade-up">
+          <div className="badge-gold mx-auto mb-6">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span>Votes en cours</span>
           </div>
+
+          <h1 className="heading-section mb-6">
+            <span className="text-gold">Votez pour votre favorite</span>
+          </h1>
+
+          <p className="text-lg text-gray-400 leading-relaxed">
+            Soutenez votre candidate avec un vote à <span className="text-[#FFD700] font-semibold">100 FCFA</span>. 
+            Votez autant de fois que vous le souhaitez.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {candidates.map((candidate) => (
-            <CandidateCard
-              key={candidate.id}
-              candidate={candidate}
-              onVote={handleVote}
-              showVotes={showVotes}
-              isAdmin={isAdmin}
-            />
-          ))}
-        </div>
+        {/* Grid */}
+        {candidates.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-xl text-gray-400">Aucune candidate disponible</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+            {candidates.map((candidate, i) => (
+              <div key={candidate.id} className="fade-up" style={{ animationDelay: `${i * 0.05}s` }}>
+                <CandidateCard
+                  candidate={candidate}
+                  onVote={handleVote}
+                  showVotes={showVotes}
+                  isAdmin={isAdmin}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
-        <div className="mt-16 text-center">
-          <div className="glass-effect rounded-xl p-8 max-w-2xl mx-auto">
-            <h3 className="text-2xl font-bold text-white mb-4">Comment voter ?</h3>
-            <div className="space-y-4 text-left">
-              <div className="flex items-start space-x-4">
-                <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center flex-shrink-0 text-accent font-bold">
+        {/* Info */}
+        <div className="mt-20 max-w-3xl mx-auto">
+          <div className="card-clean p-8">
+            <h3 className="heading-card mb-6 text-center text-white">Comment voter ?</h3>
+            
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-[#FFD700] rounded-xl flex items-center justify-center text-black font-bold text-xl mx-auto mb-4">
                   1
                 </div>
-                <p className="text-gray-300">
-                  Choisissez votre candidate favorite parmi les 10 participantes
+                <p className="text-gray-400 text-sm">
+                  Choisissez votre candidate favorite
                 </p>
               </div>
-              <div className="flex items-start space-x-4">
-                <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center flex-shrink-0 text-accent font-bold">
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-[#FFD700] rounded-xl flex items-center justify-center text-black font-bold text-xl mx-auto mb-4">
                   2
                 </div>
-                <p className="text-gray-300">
-                  Cliquez sur "Voter maintenant" et effectuez le paiement de 100 FCFA via KKiaPay
+                <p className="text-gray-400 text-sm">
+                  Payez 100 FCFA via KKiaPay
                 </p>
               </div>
-              <div className="flex items-start space-x-4">
-                <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center flex-shrink-0 text-accent font-bold">
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-[#FFD700] rounded-xl flex items-center justify-center text-black font-bold text-xl mx-auto mb-4">
                   3
                 </div>
-                <p className="text-gray-300">
-                  Votre vote est comptabilisé instantanément. Votez autant de fois que vous voulez !
+                <p className="text-gray-400 text-sm">
+                  Vote enregistré instantanément
                 </p>
               </div>
             </div>
